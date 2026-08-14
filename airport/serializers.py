@@ -4,7 +4,7 @@ from .models import Gate, Flight
 class GateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Gate
-        fields = ["id", "code", "terminal", "is_available"]
+        fields = ["id", "code", "terminal", "is_available", "created_at"]
 
 class FlightSerializer(serializers.ModelSerializer):
 

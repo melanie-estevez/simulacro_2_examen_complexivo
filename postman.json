@@ -1,0 +1,317 @@
+{
+  "info": {
+    "_postman_id": "b2d2c3f0-aaaa-bbbb-cccc-123456789000",
+    "name": " Aeropuerto API (Django + Postgres + JWT + Mongo)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://127.0.0.1:8000" },
+    { "key": "accessToken", "value": "" },
+    { "key": "refreshToken", "value": "" },
+    { "key": "airlineId", "value": "" },
+    { "key": "flightEventId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register (Public) - POST /api/auth/register/",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/auth/register/", "host": ["{{baseUrl}}"], "path": ["api", "auth", "register", ""] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"user1\",\n  \"email\": \"user1@mail.com\",\n  \"password\": \"123456\"\n}"
+            }
+          }
+        },
+        {
+            "name": "Login (JWT) - POST /api/auth/login/ (save tokens)",
+            "event": [
+                {
+                "listen": "test",
+                "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                    "let jsonData = {};",
+                    "try { jsonData = pm.response.json(); } catch (e) {}",
+                    "",
+                    "if (jsonData.access) {",
+                    "  pm.collectionVariables.set('accessToken', jsonData.access);",
+                    "  pm.environment.set('accessToken', jsonData.access);",
+                    "}",
+                    "",
+                    "if (jsonData.refresh) {",
+                    "  pm.collectionVariables.set('refreshToken', jsonData.refresh);",
+                    "  pm.environment.set('refreshToken', jsonData.refresh);",
+                    "}",
+                    "",
+                    "pm.test('Token access recibido', function () {",
+                    "  pm.expect(jsonData.access).to.be.a('string');",
+                    "});"
+                    ]
+                }
+                }
+            ],
+            "request": {
+                "method": "POST",
+                "header": [
+                { "key": "Content-Type", "value": "application/json" }
+                ],
+                "url": { "raw": "{{baseUrl}}/api/auth/login/", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login", ""] },
+                "body": {
+                "mode": "raw",
+                "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin\"\n}"
+                }
+            }
+        },
+        {
+          "name": "Refresh (JWT) - POST /api/auth/refresh/ (save access)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let jsonData = {};",
+                  "try { jsonData = pm.response.json(); } catch (e) {}",
+                  "if (jsonData.access) pm.collectionVariables.set('accessToken', jsonData.access);",
+                  "pm.test('Token access refrescado', function () { pm.expect(jsonData.access).to.be.a('string'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/auth/refresh/", "host": ["{{baseUrl}}"], "path": ["api", "auth", "refresh", ""] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh\": \"{{refreshToken}}\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Postgres - Puertas de Embarque",
+      "item": [
+        {
+          "name": "List puertas (Admin token) - GET /api/puertas/",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/puertas/", "host": ["{{baseUrl}}"], "path": ["api", "puertas", ""] }
+          }
+        },
+        {
+          "name": "Create puertas (Admin) - POST /api/puertas/",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/puertas/", "host": ["{{baseUrl}}"], "path": ["api", "puertas", ""] },
+            "body": { "mode": "raw", "raw": "{\n  \"code\": \"0001\"\n,\n  \"modelo\": \"Corolla\", \"terminal\": \"ABC-1234\",\n  \"is_available\": \"true\"\n}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Postgres - Vuelos",
+      "item": [
+        {
+          "name": "List vuelos (Public) - GET /api/vuelos/",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/vuelos/", "host": ["{{baseUrl}}"], "path": ["api", "vuelos", ""] }
+          }
+        },
+        {
+          "name": "Create vuelo (Admin) - POST /api/vuelos/",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/vuelos/", "host": ["{{baseUrl}}"], "path": ["api", "vuelos", ""] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n   \"destination\": \"España\",\n  \"flight_number\": 0143,\n  \"status\": \"cancelado\",\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Mongo - airlines",
+      "item": [
+        {
+          "name": "List airlines (Auth) - GET /api/airlines/",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/airlines/", "host": ["{{baseUrl}}"], "path": ["api", "airlines", ""] }
+          }
+        },
+        {
+          "name": "Create airline (Auth) - POST /api/airlines/ (save airlineId)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let jsonData = {};",
+                  "try { jsonData = pm.response.json(); } catch (e) {}",
+                  "if (jsonData.id) pm.collectionVariables.set('airlineId', jsonData.id);",
+                  "pm.test('Se creó airline', function () { pm.expect(jsonData.id).to.be.a('string'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/airlines/", "host": ["{{baseUrl}}"], "path": ["api", "airlines", ""] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Avianca\",\n  \"code\": \"02021\",\n  \"country\": Canada,\n  \"is_active\": true\n}"
+            }
+          }
+        },
+        {
+          "name": "Get airline by id (Auth) - GET /api/airlines/:id",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/airlines/{{airlineId}}/",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "airlines", "{{airlineId}}", ""]
+            }
+          }
+        },
+        {
+          "name": "Patch airline (Auth) - PATCH /api/airlines/:id",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/airlines/{{airlineId}}/",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "airlines", "{{airlineId}}", ""]
+            },
+            "body": { "mode": "raw", "raw": "{\n  \"is_active\": false\n}" }
+          }
+        },
+        {
+          "name": "Delete airline (Auth) - DELETE /api/airlines/:id",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/airlines/{{airlineId}}/",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "airlines", "{{airlineId}}", ""]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Mongo - flight_events",
+      "item": [
+        {
+          "name": "List flight events services (Auth) - GET /api/flight-events/",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/flight-events/", "host": ["{{baseUrl}}"], "path": ["api", "flight-events", ""] }
+          }
+        },
+        {
+          "name": "Create flight events service (Auth) - POST /api/flight-events/ (save flightEventId)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let jsonData = {};",
+                  "try { jsonData = pm.response.json(); } catch (e) {}",
+                  "if (jsonData.id) pm.collectionVariables.set('flightEventId', jsonData.id);",
+                  "pm.test('Se creó flight events service', function () { pm.expect(jsonData.id).to.be.a('string'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/flight-events/", "host": ["{{baseUrl}}"], "path": ["api", "flight-events", ""] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"flight_id\": 1,\n  \"airline_id\": \"{{airlineId}}\",\n  \"source\": web,\n  \"note\": ninguna novedad,\n }"
+            }
+          }
+        },
+        {
+          "name": "Get flight events service by id (Auth) - GET /api/flight-events/:id",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/flight-events/{{flightEventId}}/",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "flight-events", "{{flightEventId}}", ""]
+            }
+          }
+        },
+        {
+          "name": "Patch flight events service (Auth) - PATCH /api/flight-events/:id",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/flight-events/{{flightEventId}}/",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "flight-events", "{{flightEventId}}", ""]
+            },
+            "body": { "mode": "raw", "raw": "{\n  \"cost\": 45,\n  \"notes\": \"Actualizado\"\n}" }
+          }
+        },
+        {
+          "name": "Delete flight events service (Auth) - DELETE /api/flight-events/:id",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/flight-events/{{flightEventId}}/",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "flight-events", "{{flightEventId}}", ""]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
